@@ -18,7 +18,7 @@
         }
         
         .container {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
         }
         
@@ -266,6 +266,8 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
         
         .news-title {
@@ -276,15 +278,9 @@
             gap: 10px;
         }
         
-        .news-source {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.5);
-        }
-        
         .news-tabs {
             display: flex;
             gap: 8px;
-            margin-bottom: 20px;
             flex-wrap: wrap;
         }
         
@@ -297,6 +293,7 @@
             cursor: pointer;
             font-size: 0.85rem;
             transition: all 0.2s;
+            font-family: inherit;
         }
         
         .news-tab:hover {
@@ -308,41 +305,48 @@
             color: #1a1a2e;
         }
         
-        .news-list {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+        /* News Gallery Grid */
+        .news-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
         }
         
-        .news-item {
+        .news-card {
             display: block;
-            padding: 16px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            overflow: hidden;
             text-decoration: none;
             color: white;
-            transition: background 0.2s, transform 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         
-        .news-item:hover {
-            background: rgba(255,255,255,0.1);
-            transform: translateX(4px);
+        .news-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
         }
         
-        .news-category {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: #4fc3f7;
-            font-weight: 600;
-            margin-bottom: 6px;
-            letter-spacing: 0.5px;
+        .news-thumbnail {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #2a2a4a 0%, #1a1a3a 100%);
+        }
+        
+        .news-card-content {
+            padding: 16px;
         }
         
         .news-headline {
-            font-size: 1rem;
-            font-weight: 500;
+            font-size: 0.95rem;
+            font-weight: 600;
             line-height: 1.4;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
         
         .news-meta {
@@ -352,21 +356,23 @@
         }
         
         .news-source-tag {
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.5);
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.6);
             background: rgba(255,255,255,0.1);
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .news-date {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: rgba(255,255,255,0.5);
         }
         
-        .news-loading {
+        .news-loading, .news-error {
             text-align: center;
-            padding: 40px;
+            padding: 60px 20px;
             color: rgba(255,255,255,0.6);
         }
         
@@ -407,6 +413,9 @@
             h1 { font-size: 1.8rem; }
             .current-weather { padding: 30px 20px; }
             .day-condition { display: none; }
+            .news-gallery {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -597,19 +606,16 @@
         // ===== NEWS =====
         const newsSources = {
             bbc: {
-                name: 'BBC News',
-                url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
-                color: '#bb1919'
+                name: 'BBC',
+                url: 'https://feeds.bbci.co.uk/news/world/rss.xml'
             },
             reuters: {
                 name: 'Reuters',
-                url: 'https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best',
-                color: '#ff8000'
+                url: 'https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best'
             },
             guardian: {
-                name: 'The Guardian',
-                url: 'https://www.theguardian.com/world/rss',
-                color: '#052962'
+                name: 'Guardian',
+                url: 'https://www.theguardian.com/world/rss'
             }
         };
         
@@ -622,7 +628,7 @@
             }
             
             const rssUrl = newsSources[source].url;
-            const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=10`;
+            const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=12`;
             
             const response = await fetch(apiUrl);
             if (!response.ok) throw new Error('News unavailable');
@@ -644,6 +650,33 @@
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
         
+        function extractImage(item) {
+            // Try thumbnail first
+            if (item.thumbnail && item.thumbnail.length > 0) {
+                return item.thumbnail;
+            }
+            // Try enclosure
+            if (item.enclosure && item.enclosure.link) {
+                return item.enclosure.link;
+            }
+            // Try to extract from content/description
+            if (item.content) {
+                const match = item.content.match(/<img[^>]+src=["']([^"']+)["']/);
+                if (match) return match[1];
+            }
+            if (item.description) {
+                const match = item.description.match(/<img[^>]+src=["']([^"']+)["']/);
+                if (match) return match[1];
+            }
+            // Fallback placeholder
+            return `https://picsum.photos/seed/${encodeURIComponent(item.title.slice(0,20))}/400/200`;
+        }
+        
+        function truncateHeadline(text, maxLength = 80) {
+            if (text.length <= maxLength) return text;
+            return text.slice(0, maxLength).trim() + '...';
+        }
+        
         function renderNews(data, source) {
             if (!data.items || data.items.length === 0) {
                 throw new Error('No news available');
@@ -655,19 +688,22 @@
                 <div class="news-section">
                     <div class="news-header">
                         <div class="news-title">📰 World News</div>
+                        <div class="news-tabs">
+                            ${Object.entries(newsSources).map(([key, val]) => `
+                                <button class="news-tab ${key === source ? 'active' : ''}" onclick="switchSource('${key}')">${val.name}</button>
+                            `).join('')}
+                        </div>
                     </div>
-                    <div class="news-tabs">
-                        ${Object.entries(newsSources).map(([key, val]) => `
-                            <button class="news-tab ${key === source ? 'active' : ''}" onclick="switchSource('${key}')">${val.name}</button>
-                        `).join('')}
-                    </div>
-                    <div class="news-list">
-                        ${data.items.slice(0, 10).map(item => `
-                            <a href="${item.link}" target="_blank" rel="noopener" class="news-item">
-                                <div class="news-headline">${item.title}</div>
-                                <div class="news-meta">
-                                    <span class="news-source-tag">${sourceInfo.name}</span>
-                                    <span class="news-date">${formatNewsDate(item.pubDate)}</span>
+                    <div class="news-gallery">
+                        ${data.items.slice(0, 12).map(item => `
+                            <a href="${item.link}" target="_blank" rel="noopener" class="news-card">
+                                <img class="news-thumbnail" src="${extractImage(item)}" alt="" loading="lazy" onerror="this.src='https://picsum.photos/seed/${Math.random()}/400/200'">
+                                <div class="news-card-content">
+                                    <div class="news-headline">${truncateHeadline(item.title)}</div>
+                                    <div class="news-meta">
+                                        <span class="news-source-tag">${sourceInfo.name}</span>
+                                        <span class="news-date">${formatNewsDate(item.pubDate)}</span>
+                                    </div>
                                 </div>
                             </a>
                         `).join('')}
@@ -681,13 +717,13 @@
                 <div class="news-section">
                     <div class="news-header">
                         <div class="news-title">📰 World News</div>
+                        <div class="news-tabs">
+                            ${Object.entries(newsSources).map(([key, val]) => `
+                                <button class="news-tab ${key === currentSource ? 'active' : ''}" onclick="switchSource('${key}')">${val.name}</button>
+                            `).join('')}
+                        </div>
                     </div>
-                    <div class="news-tabs">
-                        ${Object.entries(newsSources).map(([key, val]) => `
-                            <button class="news-tab ${key === currentSource ? 'active' : ''}" onclick="switchSource('${key}')">${val.name}</button>
-                        `).join('')}
-                    </div>
-                    <div class="news-loading">
+                    <div class="news-error">
                         <p>Unable to load news. Click a source to retry.</p>
                     </div>
                 </div>
@@ -696,6 +732,15 @@
         
         async function switchSource(source) {
             currentSource = source;
+            // Show loading state
+            const gallery = document.querySelector('.news-gallery');
+            if (gallery) {
+                gallery.innerHTML = '<div class="news-loading"><div class="loading-spinner"></div></div>';
+            }
+            // Update active tab immediately
+            document.querySelectorAll('.news-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent === newsSources[source].name);
+            });
             try {
                 const data = await fetchNews(source);
                 renderNews(data, source);
@@ -704,7 +749,6 @@
             }
         }
         
-        // Make switchSource available globally
         window.switchSource = switchSource;
         
         // ===== INITIALIZE =====

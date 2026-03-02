@@ -276,10 +276,36 @@
             gap: 10px;
         }
         
-        .economist-logo {
-            color: #e3120b;
-            font-weight: 700;
-            font-style: italic;
+        .news-source {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .news-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .news-tab {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 20px;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .news-tab:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .news-tab.active {
+            background: white;
+            color: #1a1a2e;
         }
         
         .news-list {
@@ -306,7 +332,7 @@
         .news-category {
             font-size: 0.75rem;
             text-transform: uppercase;
-            color: #e3120b;
+            color: #4fc3f7;
             font-weight: 600;
             margin-bottom: 6px;
             letter-spacing: 0.5px;
@@ -317,6 +343,20 @@
             font-weight: 500;
             line-height: 1.4;
             margin-bottom: 6px;
+        }
+        
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .news-source-tag {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
         }
         
         .news-date {
@@ -390,7 +430,7 @@
         <div id="news-app">
             <div class="news-section">
                 <div class="news-header">
-                    <div class="news-title">📰 <span class="economist-logo">The Economist</span></div>
+                    <div class="news-title">📰 World News</div>
                 </div>
                 <div class="news-loading">
                     <div class="loading-spinner"></div>
@@ -555,14 +595,40 @@
         }
         
         // ===== NEWS =====
-        async function fetchNews() {
-            // Using RSS2JSON to parse The Economist RSS feed
-            const rssUrl = 'https://www.economist.com/international/rss.xml';
-            const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=8`;
+        const newsSources = {
+            bbc: {
+                name: 'BBC News',
+                url: 'https://feeds.bbci.co.uk/news/world/rss.xml',
+                color: '#bb1919'
+            },
+            reuters: {
+                name: 'Reuters',
+                url: 'https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best',
+                color: '#ff8000'
+            },
+            guardian: {
+                name: 'The Guardian',
+                url: 'https://www.theguardian.com/world/rss',
+                color: '#052962'
+            }
+        };
+        
+        let currentSource = 'bbc';
+        let newsCache = {};
+        
+        async function fetchNews(source) {
+            if (newsCache[source]) {
+                return newsCache[source];
+            }
+            
+            const rssUrl = newsSources[source].url;
+            const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=10`;
             
             const response = await fetch(apiUrl);
             if (!response.ok) throw new Error('News unavailable');
-            return await response.json();
+            const data = await response.json();
+            newsCache[source] = data;
+            return data;
         }
         
         function formatNewsDate(dateStr) {
@@ -578,29 +644,31 @@
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
         
-        function extractCategory(item) {
-            if (item.categories && item.categories.length > 0) {
-                return item.categories[0];
-            }
-            return 'World';
-        }
-        
-        function renderNews(data) {
+        function renderNews(data, source) {
             if (!data.items || data.items.length === 0) {
                 throw new Error('No news available');
             }
             
+            const sourceInfo = newsSources[source];
+            
             document.getElementById('news-app').innerHTML = `
                 <div class="news-section">
                     <div class="news-header">
-                        <div class="news-title">📰 <span class="economist-logo">The Economist</span></div>
+                        <div class="news-title">📰 World News</div>
+                    </div>
+                    <div class="news-tabs">
+                        ${Object.entries(newsSources).map(([key, val]) => `
+                            <button class="news-tab ${key === source ? 'active' : ''}" onclick="switchSource('${key}')">${val.name}</button>
+                        `).join('')}
                     </div>
                     <div class="news-list">
-                        ${data.items.slice(0, 8).map(item => `
+                        ${data.items.slice(0, 10).map(item => `
                             <a href="${item.link}" target="_blank" rel="noopener" class="news-item">
-                                <div class="news-category">${extractCategory(item)}</div>
                                 <div class="news-headline">${item.title}</div>
-                                <div class="news-date">${formatNewsDate(item.pubDate)}</div>
+                                <div class="news-meta">
+                                    <span class="news-source-tag">${sourceInfo.name}</span>
+                                    <span class="news-date">${formatNewsDate(item.pubDate)}</span>
+                                </div>
                             </a>
                         `).join('')}
                     </div>
@@ -612,16 +680,32 @@
             document.getElementById('news-app').innerHTML = `
                 <div class="news-section">
                     <div class="news-header">
-                        <div class="news-title">📰 <span class="economist-logo">The Economist</span></div>
+                        <div class="news-title">📰 World News</div>
                     </div>
-                    <div class="news-list">
-                        <a href="https://www.economist.com" target="_blank" rel="noopener" class="news-item">
-                            <div class="news-headline">Visit The Economist for latest news →</div>
-                        </a>
+                    <div class="news-tabs">
+                        ${Object.entries(newsSources).map(([key, val]) => `
+                            <button class="news-tab ${key === currentSource ? 'active' : ''}" onclick="switchSource('${key}')">${val.name}</button>
+                        `).join('')}
+                    </div>
+                    <div class="news-loading">
+                        <p>Unable to load news. Click a source to retry.</p>
                     </div>
                 </div>
             `;
         }
+        
+        async function switchSource(source) {
+            currentSource = source;
+            try {
+                const data = await fetchNews(source);
+                renderNews(data, source);
+            } catch (err) {
+                renderNewsError();
+            }
+        }
+        
+        // Make switchSource available globally
+        window.switchSource = switchSource;
         
         // ===== INITIALIZE =====
         fetchWeather()
@@ -630,14 +714,15 @@
                 document.getElementById('weather-app').innerHTML = `<div class="error">⚠️ ${err.message}</div>`;
             });
             
-        fetchNews()
-            .then(renderNews)
+        fetchNews(currentSource)
+            .then(data => renderNews(data, currentSource))
             .catch(renderNewsError);
             
         // Refresh every 10 minutes
         setInterval(() => {
             fetchWeather().then(renderWeather).catch(() => {});
-            fetchNews().then(renderNews).catch(() => {});
+            newsCache = {};
+            fetchNews(currentSource).then(data => renderNews(data, currentSource)).catch(() => {});
         }, 600000);
     </script>
 </body>

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medellín Weather ☀️</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .location {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .location svg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.95rem;
+        }
+        
+        .current-weather {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .weather-icon {
+            font-size: 100px;
+            margin-bottom: 10px;
+        }
+        
+        .temperature {
+            font-size: 5rem;
+            font-weight: 300;
+            line-height: 1;
+        }
+        
+        .temperature sup {
+            font-size: 2rem;
+            vertical-align: super;
+        }
+        
+        .condition {
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.8);
+            margin-top: 10px;
+            text-transform: capitalize;
+        }
+        
+        .feels-like {
+            color: rgba(255,255,255,0.6);
+            margin-top: 5px;
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .detail-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .detail-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .detail-label {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .forecast-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .forecast-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .hourly-forecast {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.3) transparent;
+        }
+        
+        .hourly-forecast::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .hourly-forecast::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+        
+        .hour-item {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            min-width: 70px;
+        }
+        
+        .hour-time {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 8px;
+        }
+        
+        .hour-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .hour-temp {
+            font-weight: 600;
+        }
+        
+        .daily-forecast {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .day-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+        }
+        
+        .day-name {
+            width: 100px;
+            font-weight: 500;
+        }
+        
+        .day-icon {
+            font-size: 28px;
+            width: 50px;
+            text-align: center;
+        }
+        
+        .day-condition {
+            flex: 1;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+        }
+        
+        .day-temps {
+            text-align: right;
+        }
+        
+        .day-high {
+            font-weight: 600;
+        }
+        
+        .day-low {
+            color: rgba(255,255,255,0.5);
+            margin-left: 8px;
+        }
+        
+        .sun-times {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        .sun-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .sun-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .sun-label {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+        
+        .sun-time {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #ff6b6b;
+        }
+        
+        .last-updated {
+            text-align: center;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .temperature { font-size: 4rem; }
+            h1 { font-size: 1.8rem; }
+            .current-weather { padding: 30px 20px; }
+            .day-condition { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="location">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <h1>Medellín, Colombia</h1>
+            </div>
+            <p class="subtitle">La Ciudad de la Eterna Primavera</p>
+        </header>
+        
+        <div id="app">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading weather data...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Medellín coordinates
+        const LAT = 6.2442;
+        const LON = -75.5812;
+        
+        // Weather code to icon/description mapping
+        const weatherCodes = {
+            0: { icon: '☀️', desc: 'Clear sky' },
+            1: { icon: '🌤️', desc: 'Mainly clear' },
+            2: { icon: '⛅', desc: 'Partly cloudy' },
+            3: { icon: '☁️', desc: 'Overcast' },
+            45: { icon: '🌫️', desc: 'Foggy' },
+            48: { icon: '🌫️', desc: 'Depositing rime fog' },
+            51: { icon: '🌧️', desc: 'Light drizzle' },
+            53: { icon: '🌧️', desc: 'Moderate drizzle' },
+            55: { icon: '🌧️', desc: 'Dense drizzle' },
+            61: { icon: '🌧️', desc: 'Slight rain' },
+            63: { icon: '🌧️', desc: 'Moderate rain' },
+            65: { icon: '🌧️', desc: 'Heavy rain' },
+            71: { icon: '❄️', desc: 'Slight snow' },
+            73: { icon: '❄️', desc: 'Moderate snow' },
+            75: { icon: '❄️', desc: 'Heavy snow' },
+            80: { icon: '🌦️', desc: 'Slight showers' },
+            81: { icon: '🌦️', desc: 'Moderate showers' },
+            82: { icon: '⛈️', desc: 'Violent showers' },
+            95: { icon: '⛈️', desc: 'Thunderstorm' },
+            96: { icon: '⛈️', desc: 'Thunderstorm with hail' },
+            99: { icon: '⛈️', desc: 'Thunderstorm with heavy hail' }
+        };
+        
+        function getWeatherInfo(code) {
+            return weatherCodes[code] || { icon: '🌡️', desc: 'Unknown' };
+        }
+        
+        function formatTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+        }
+        
+        function formatHour(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            if (date.getHours() === now.getHours() && date.getDate() === now.getDate()) {
+                return 'Now';
+            }
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+        }
+        
+        function formatDay(dateStr) {
+            const date = new Date(dateStr);
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            if (date.toDateString() === today.toDateString()) return 'Today';
+            if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+            return date.toLocaleDateString('en-US', { weekday: 'short' });
+        }
+        
+        async function fetchWeather() {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,uv_index&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max&timezone=America/Bogota`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Weather data unavailable');
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        function renderWeather(data) {
+            const current = data.current;
+            const daily = data.daily;
+            const hourly = data.hourly;
+            const weatherInfo = getWeatherInfo(current.weather_code);
+            
+            // Get next 24 hours
+            const now = new Date();
+            const currentHourIndex = hourly.time.findIndex(t => new Date(t) >= now);
+            const next24Hours = hourly.time.slice(currentHourIndex, currentHourIndex + 24);
+            const next24Temps = hourly.temperature_2m.slice(currentHourIndex, currentHourIndex + 24);
+            const next24Codes = hourly.weather_code.slice(currentHourIndex, currentHourIndex + 24);
+            
+            const html = `
+                <div class="current-weather">
+                    <div class="weather-icon">${weatherInfo.icon}</div>
+                    <div class="temperature">${Math.round(current.temperature_2m)}<sup>°C</sup></div>
+                    <div class="condition">${weatherInfo.desc}</div>
+                    <div class="feels-like">Feels like ${Math.round(current.apparent_temperature)}°C</div>
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-card">
+                        <div class="detail-icon">💧</div>
+                        <div class="detail-label">Humidity</div>
+                        <div class="detail-value">${current.relative_humidity_2m}%</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-icon">💨</div>
+                        <div class="detail-label">Wind</div>
+                        <div class="detail-value">${Math.round(current.wind_speed_10m)} km/h</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-icon">☀️</div>
+                        <div class="detail-label">UV Index</div>
+                        <div class="detail-value">${Math.round(current.uv_index)}</div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-icon">🌧️</div>
+                        <div class="detail-label">Rain Chance</div>
+                        <div class="detail-value">${daily.precipitation_probability_max[0]}%</div>
+                    </div>
+                </div>
+                
+                <div class="forecast-section">
+                    <div class="forecast-title">📅 Hourly Forecast</div>
+                    <div class="hourly-forecast">
+                        ${next24Hours.map((time, i) => `
+                            <div class="hour-item">
+                                <div class="hour-time">${formatHour(time)}</div>
+                                <div class="hour-icon">${getWeatherInfo(next24Codes[i]).icon}</div>
+                                <div class="hour-temp">${Math.round(next24Temps[i])}°</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="forecast-section">
+                    <div class="forecast-title">📆 7-Day Forecast</div>
+                    <div class="daily-forecast">
+                        ${daily.time.map((date, i) => `
+                            <div class="day-item">
+                                <div class="day-name">${formatDay(date)}</div>
+                                <div class="day-icon">${getWeatherInfo(daily.weather_code[i]).icon}</div>
+                                <div class="day-condition">${getWeatherInfo(daily.weather_code[i]).desc}</div>
+                                <div class="day-temps">
+                                    <span class="day-high">${Math.round(daily.temperature_2m_max[i])}°</span>
+                                    <span class="day-low">${Math.round(daily.temperature_2m_min[i])}°</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="sun-times">
+                    <div class="sun-card">
+                        <div class="sun-icon">🌅</div>
+                        <div class="sun-label">Sunrise</div>
+                        <div class="sun-time">${formatTime(daily.sunrise[0])}</div>
+                    </div>
+                    <div class="sun-card">
+                        <div class="sun-icon">🌇</div>
+                        <div class="sun-label">Sunset</div>
+                        <div class="sun-time">${formatTime(daily.sunset[0])}</div>
+                    </div>
+                </div>
+                
+                <div class="last-updated">
+                    Last updated: ${new Date().toLocaleString('en-US', { 
+                        timeZone: 'America/Bogota',
+                        dateStyle: 'medium',
+                        timeStyle: 'short'
+                    })}
+                </div>
+            `;
+            
+            document.getElementById('app').innerHTML = html;
+        }
+        
+        function renderError(message) {
+            document.getElementById('app').innerHTML = `
+                <div class="error">
+                    <p>⚠️ ${message}</p>
+                    <p>Please try again later.</p>
+                </div>
+            `;
+        }
+        
+        // Initialize
+        fetchWeather()
+            .then(renderWeather)
+            .catch(err => renderError(err.message));
+            
+        // Refresh every 10 minutes
+        setInterval(() => {
+            fetchWeather()
+                .then(renderWeather)
+                .catch(err => renderError(err.message));
+        }, 600000);
+    </script>
+</body>
+</html>

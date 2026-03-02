@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medellín Weather ☀️</title>
+    <title>Medellín Weather & News ☀️</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -225,6 +225,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
+            margin-bottom: 24px;
         }
         
         .sun-card {
@@ -249,6 +250,84 @@
         .sun-time {
             font-size: 1.5rem;
             font-weight: 600;
+        }
+        
+        /* News Section */
+        .news-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .news-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .news-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .economist-logo {
+            color: #e3120b;
+            font-weight: 700;
+            font-style: italic;
+        }
+        
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .news-item {
+            display: block;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            text-decoration: none;
+            color: white;
+            transition: background 0.2s, transform 0.2s;
+        }
+        
+        .news-item:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(4px);
+        }
+        
+        .news-category {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #e3120b;
+            font-weight: 600;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        
+        .news-headline {
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 6px;
+        }
+        
+        .news-date {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .news-loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255,255,255,0.6);
         }
         
         .loading {
@@ -301,20 +380,31 @@
             <p class="subtitle">La Ciudad de la Eterna Primavera</p>
         </header>
         
-        <div id="app">
+        <div id="weather-app">
             <div class="loading">
                 <div class="loading-spinner"></div>
                 <p>Loading weather data...</p>
             </div>
         </div>
+        
+        <div id="news-app">
+            <div class="news-section">
+                <div class="news-header">
+                    <div class="news-title">📰 <span class="economist-logo">The Economist</span></div>
+                </div>
+                <div class="news-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading latest news...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Medellín coordinates
+        // ===== WEATHER =====
         const LAT = 6.2442;
         const LON = -75.5812;
         
-        // Weather code to icon/description mapping
         const weatherCodes = {
             0: { icon: '☀️', desc: 'Clear sky' },
             1: { icon: '🌤️', desc: 'Mainly clear' },
@@ -345,7 +435,7 @@
         
         function formatTime(dateStr) {
             const date = new Date(dateStr);
-            return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
         }
         
         function formatHour(dateStr) {
@@ -371,13 +461,9 @@
         async function fetchWeather() {
             const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,uv_index&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max,uv_index_max&timezone=America/Bogota`;
             
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Weather data unavailable');
-                return await response.json();
-            } catch (error) {
-                throw error;
-            }
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Weather data unavailable');
+            return await response.json();
         }
         
         function renderWeather(data) {
@@ -386,14 +472,13 @@
             const hourly = data.hourly;
             const weatherInfo = getWeatherInfo(current.weather_code);
             
-            // Get next 24 hours
             const now = new Date();
             const currentHourIndex = hourly.time.findIndex(t => new Date(t) >= now);
             const next24Hours = hourly.time.slice(currentHourIndex, currentHourIndex + 24);
             const next24Temps = hourly.temperature_2m.slice(currentHourIndex, currentHourIndex + 24);
             const next24Codes = hourly.weather_code.slice(currentHourIndex, currentHourIndex + 24);
             
-            const html = `
+            document.getElementById('weather-app').innerHTML = `
                 <div class="current-weather">
                     <div class="weather-icon">${weatherInfo.icon}</div>
                     <div class="temperature">${Math.round(current.temperature_2m)}<sup>°C</sup></div>
@@ -466,38 +551,93 @@
                         <div class="sun-time">${formatTime(daily.sunset[0])}</div>
                     </div>
                 </div>
-                
-                <div class="last-updated">
-                    Last updated: ${new Date().toLocaleString('en-US', { 
-                        timeZone: 'America/Bogota',
-                        dateStyle: 'medium',
-                        timeStyle: 'short'
-                    })}
-                </div>
             `;
+        }
+        
+        // ===== NEWS =====
+        async function fetchNews() {
+            // Using RSS2JSON to parse The Economist RSS feed
+            const rssUrl = 'https://www.economist.com/international/rss.xml';
+            const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=8`;
             
-            document.getElementById('app').innerHTML = html;
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('News unavailable');
+            return await response.json();
         }
         
-        function renderError(message) {
-            document.getElementById('app').innerHTML = `
-                <div class="error">
-                    <p>⚠️ ${message}</p>
-                    <p>Please try again later.</p>
+        function formatNewsDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            if (diffHours < 1) return 'Just now';
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        function extractCategory(item) {
+            if (item.categories && item.categories.length > 0) {
+                return item.categories[0];
+            }
+            return 'World';
+        }
+        
+        function renderNews(data) {
+            if (!data.items || data.items.length === 0) {
+                throw new Error('No news available');
+            }
+            
+            document.getElementById('news-app').innerHTML = `
+                <div class="news-section">
+                    <div class="news-header">
+                        <div class="news-title">📰 <span class="economist-logo">The Economist</span></div>
+                    </div>
+                    <div class="news-list">
+                        ${data.items.slice(0, 8).map(item => `
+                            <a href="${item.link}" target="_blank" rel="noopener" class="news-item">
+                                <div class="news-category">${extractCategory(item)}</div>
+                                <div class="news-headline">${item.title}</div>
+                                <div class="news-date">${formatNewsDate(item.pubDate)}</div>
+                            </a>
+                        `).join('')}
+                    </div>
                 </div>
             `;
         }
         
-        // Initialize
+        function renderNewsError() {
+            document.getElementById('news-app').innerHTML = `
+                <div class="news-section">
+                    <div class="news-header">
+                        <div class="news-title">📰 <span class="economist-logo">The Economist</span></div>
+                    </div>
+                    <div class="news-list">
+                        <a href="https://www.economist.com" target="_blank" rel="noopener" class="news-item">
+                            <div class="news-headline">Visit The Economist for latest news →</div>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // ===== INITIALIZE =====
         fetchWeather()
             .then(renderWeather)
-            .catch(err => renderError(err.message));
+            .catch(err => {
+                document.getElementById('weather-app').innerHTML = `<div class="error">⚠️ ${err.message}</div>`;
+            });
+            
+        fetchNews()
+            .then(renderNews)
+            .catch(renderNewsError);
             
         // Refresh every 10 minutes
         setInterval(() => {
-            fetchWeather()
-                .then(renderWeather)
-                .catch(err => renderError(err.message));
+            fetchWeather().then(renderWeather).catch(() => {});
+            fetchNews().then(renderNews).catch(() => {});
         }, 600000);
     </script>
 </body>
